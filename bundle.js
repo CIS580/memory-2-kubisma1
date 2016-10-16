@@ -1,6 +1,8 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
 
+const debug = true;
+
 /* Classes */
 const Game = require('./game');
 
@@ -9,23 +11,76 @@ var canvas = document.getElementById('screen');
 var game = new Game(canvas, update, render);
 var image = new Image();
 image.src = 'assets/animals.png';
+var blip = new Audio();
+blip.src = 'blip.wav';
+var flip = new Audio();
+flip.src = 'flip.wav';
+var pair = new Audio();
+pair.src = pair.wav;
 
 // We have 9 pairs of possible cards that are about 212px square
 var cards = [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8];
 var board = [];
 while(cards.length > 0) {
   var index = Math.floor(Math.random() * (cards.length - 1));
-  board.push({card: cards[index], flip: true});
+  board.push({card: cards[index], flip: false});
   cards.splice(index, 1);
 }
-console.log(board);
+
+var state = "waiting for click 1";
+var player = 0;
+var scores = [0,0];
+var card1;
+var card2;
 
 // TODO: Place the cards on the board in random order
 
 canvas.onclick = function(event) {
   event.preventDefault();
-  // TODO: determine which card was clicked on
-  // TODO: determine what to do
+  var x = Math.floor((event.clientX - 3) / 165);
+  var y = Math.floor((event.clientY - 3) / 165);
+
+  var card = board[y * 6 + x];
+  if(!card || card.flip) return blip.play(); //if card is undefined, than !card is true
+  //and card.flip will never be processed
+
+  card.flip = true;
+
+  switch (state) {
+    case "waiting for click 1":
+      card1 = card;
+      state = "waiting for click 2";
+      break;
+    case "waiting for click 2":
+      card2 = card;
+      state = "waiting for timer";
+      setTimeout(function() {
+        if(card1.card == card2.card) {
+          scores[player]++;
+        } else {
+          card1.flip = false;
+          card2.flip = false;
+          player = (player + 1) % 2;
+        }
+      }, 3000);
+      state = "waiting for click 1";
+      break;
+  }
+}
+
+canvas.onContextMenu = function(event) {
+  event.preventDefault();
+  alert("foo");
+}
+
+var currentIndex, currentX, currentY;
+canvas.onmousemove = function(event) {
+  event.preventDefault();
+  currentX = event.offsetX;
+  currentY = event.offsetY;
+  var x = Math.floor((currentX + 3) / 165);
+  var y = Math.floor((currentY + 3) / 165);
+  currentIndex = y * 6 + x;
 }
 
 /**
@@ -82,7 +137,15 @@ function render(elapsedTime, ctx) {
       }
     }
   }
-
+  if (debug) {
+    var x = currentIndex % 6;
+    var y = Math.floor(currentIndex / 6);
+    ctx.fillStyle = "#ff000000";
+    ctx.beginPath();
+    ctx.arc(currentX, currentY, 3, 0, 2*Math.PI);
+    ctx.rect(x * 165 + 3, y * 165 + 3, 163, 163);
+    ctx.stroke();
+  }
 }
 
 },{"./game":2}],2:[function(require,module,exports){

@@ -1,5 +1,7 @@
 "use strict";
 
+const debug = true;
+
 /* Classes */
 const Game = require('./game');
 
@@ -8,6 +10,12 @@ var canvas = document.getElementById('screen');
 var game = new Game(canvas, update, render);
 var image = new Image();
 image.src = 'assets/animals.png';
+var blip = new Audio();
+blip.src = 'blip.wav';
+var flip = new Audio();
+flip.src = 'flip.wav';
+var pair = new Audio();
+pair.src = pair.wav;
 
 // We have 9 pairs of possible cards that are about 212px square
 var cards = [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8];
@@ -32,7 +40,7 @@ canvas.onclick = function(event) {
   var y = Math.floor((event.clientY - 3) / 165);
 
   var card = board[y * 6 + x];
-  if(!card || card.flip) return; //if card is undefined, than !card is true
+  if(!card || card.flip) return blip.play(); //if card is undefined, than !card is true
   //and card.flip will never be processed
 
   card.flip = true;
@@ -57,6 +65,21 @@ canvas.onclick = function(event) {
       state = "waiting for click 1";
       break;
   }
+}
+
+canvas.onContextMenu = function(event) {
+  event.preventDefault();
+  alert("foo");
+}
+
+var currentIndex, currentX, currentY;
+canvas.onmousemove = function(event) {
+  event.preventDefault();
+  currentX = event.offsetX;
+  currentY = event.offsetY;
+  var x = Math.floor((currentX + 3) / 165);
+  var y = Math.floor((currentY + 3) / 165);
+  currentIndex = y * 6 + x;
 }
 
 /**
@@ -113,5 +136,13 @@ function render(elapsedTime, ctx) {
       }
     }
   }
-
+  if (debug) {
+    var x = currentIndex % 6;
+    var y = Math.floor(currentIndex / 6);
+    ctx.fillStyle = "#ff000000";
+    ctx.beginPath();
+    ctx.arc(currentX, currentY, 3, 0, 2*Math.PI);
+    ctx.rect(x * 165 + 3, y * 165 + 3, 163, 163);
+    ctx.stroke();
+  }
 }
